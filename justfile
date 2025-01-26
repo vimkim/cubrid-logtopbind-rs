@@ -185,3 +185,6 @@ watch-test:
 # run tests when sources change (requires https://github.com/Canop/bacon)
 watch-test-bacon:
     bacon --no-wrap test
+
+sqlite3:
+    sqlite3 queries.db 'select * from log_entries;'

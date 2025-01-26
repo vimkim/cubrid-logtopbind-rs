@@ -117,13 +117,18 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
 }
 
 fn insert_entry(conn: &Connection, entry: &LogEntry) -> Result<()> {
+    // Convert the Vec<String> to a JSON string
+    let bind_statements_json = serde_json::to_string(&entry.bind_statements)
+        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
     conn.execute(
-        "INSERT INTO log_entries (query_no, filename, query, bind_statements) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO log_entries (query_no, filename, query, bind_statements) 
+         VALUES (?1, ?2, ?3, ?4)",
         params![
-            entry.query_no,
-            entry.filename,
-            entry.query,
-            entry.bind_statements
+            &entry.query_no,
+            &entry.filename,
+            &entry.query,
+            &bind_statements_json
         ],
     )?;
     Ok(())
