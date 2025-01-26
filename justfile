@@ -147,7 +147,7 @@ release: pre-release
 
 # build and run
 run:
-    cargo run
+    cargo run ./testdata/log_top.q
 
 # print system information such as OS and architecture
 system-info:
