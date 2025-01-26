@@ -147,7 +147,12 @@ release: pre-release
 
 # build and run
 run:
+    rm queries.db
     cargo run ./testdata/log_top.q
+
+run-500k:
+    rm queries.db
+    cargo run ./testdata/log_top_500k.q
 
 # print system information such as OS and architecture
 system-info:
