@@ -2,8 +2,8 @@ use regex::Regex;
 use rusqlite::{params, Connection, Result};
 use serde_json::json;
 use std::env;
+use std::fmt;
 use std::fs;
-use std::path::Path;
 
 fn main() -> Result<()> {
     // Get command-line arguments
@@ -30,7 +30,7 @@ fn main() -> Result<()> {
     // Parse log entries and insert them into the database
     let entries = parse_log_entries(&content);
     for entry in entries {
-        println!("Inserting log entry: {:?}", entry);
+        println!("Inserting log entry: {:#?}", entry);
         insert_entry(&conn, &entry)?;
     }
 
@@ -38,12 +38,25 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Default)]
 struct LogEntry {
     query_no: String,
     filename: String,
     query: String,
     bind_statements: String, // JSON array as a string
+}
+
+// Custom implementation of Debug trait
+impl fmt::Debug for LogEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // We use the alternate flag (#) to add newlines and indentation
+        f.debug_struct("LogEntry")
+            .field("query_no", &self.query_no)
+            .field("filename", &self.filename)
+            .field("query", &self.query)
+            .field("bind_statements", &self.bind_statements)
+            .finish()
+    }
 }
 
 fn initialize_db(conn: &Connection) -> Result<()> {
@@ -64,7 +77,7 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
     let mut entries = Vec::new();
     let re_query_no = Regex::new(r"^\[Q(\d+)]").unwrap();
     let re_filename = Regex::new(r"^([\w\.]+):").unwrap();
-    let re_query = Regex::new(r"\d+ execute_all .*? ([A-Z]+.*?)\s+bind ").unwrap();
+    let re_query = Regex::new(r"execute_all .*? ([A-Z]+.*)$").unwrap();
     let re_bind = Regex::new(r"bind \d+ : (.*?)\s*").unwrap();
 
     let mut current_query_no = "".to_string();
