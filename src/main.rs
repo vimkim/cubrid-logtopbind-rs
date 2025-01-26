@@ -32,9 +32,29 @@ fn main() -> Result<()> {
     // Parse log entries and insert them into the database
     let entries = parse_log_entries(&content);
 
+    validate_entries(&entries)?;
+
     // Process entries with progress tracking
     insert_entry(&mut conn, &entries)?;
 
+    Ok(())
+}
+
+fn validate_entries(entries: &[LogEntry]) -> Result<()> {
+    // number of '?' in entry.query and the number of bind statements should match
+    entries.iter().try_for_each(|entry| {
+        let query_no_of_placeholders = entry.query.matches('?').count();
+        if query_no_of_placeholders != entry.bind_statements.len() {
+            return Err(anyhow::anyhow!(
+                "Number of placeholders in query {} and bind statements {} do not match for query_no: {}, {:#?}",
+                query_no_of_placeholders,
+                entry.bind_statements.len(),
+                entry.query_no,
+                entry
+            ));
+        }
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -78,10 +98,12 @@ fn initialize_db(conn: &Connection) -> Result<()> {
 
 fn parse_log_entries(content: &str) -> Vec<LogEntry> {
     let mut entries = Vec::new();
-    let re_query_no = Regex::new(r"^\[Q(\d+)]").unwrap();
+    let re_query_no = Regex::new(r"^\[Q(\d+)\]").unwrap();
     let re_filename = Regex::new(r"^([\w\.]+):").unwrap();
-    let re_query = Regex::new(r"execute_all .*? ([A-Z]+.*)$").unwrap();
-    let re_bind = Regex::new(r"bind \d+ : .+? \(.*\)(.*)$").unwrap();
+    let re_query = Regex::new(r"(?:execute_all|execute) srv_h_id (.*)$").unwrap();
+    let re_bind = Regex::new(r"bind \d+ : .+? (?:\(.*\))?(.*)$").unwrap();
+    let re_bind_null = Regex::new(r"bind \d+ : NULL$").unwrap();
+    let re_end = Regex::new(r"execute_all 0 tuple").unwrap();
 
     let mut current_query_no = "".to_string();
     let mut current_filename = "".to_string();
@@ -104,18 +126,20 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
             }
 
             current_query_no = caps[1].to_string();
-        }
-
-        if let Some(caps) = re_filename.captures(line) {
+        } else if let Some(caps) = re_filename.captures(line) {
             current_filename = caps[1].to_string();
-        }
-
-        if let Some(caps) = re_query.captures(line) {
+        } else if let Some(caps) = re_query.captures(line) {
             current_query = caps[1].to_string();
-        }
-
-        if let Some(caps) = re_bind.captures(line) {
+        } else if let Some(caps) = re_bind.captures(line) {
             bind_statements.push(caps[1].to_string());
+        } else if re_bind_null.captures(line).is_some() {
+            bind_statements.push("NULL".to_owned());
+        } else if re_end.captures(line).is_some() {
+            /* end of query */
+        } else if line.is_empty() {
+            /* empty line */
+        } else {
+            panic!("Unrecognized line: {}", line);
         }
     }
 
