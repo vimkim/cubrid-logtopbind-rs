@@ -1,6 +1,7 @@
 use regex::Regex;
 use rusqlite::{params, Connection, Result};
 use serde_json::json;
+use serde_json::Value;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -46,16 +47,22 @@ struct LogEntry {
     bind_statements: String, // JSON array as a string
 }
 
-// Custom implementation of Debug trait
 impl fmt::Debug for LogEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // We use the alternate flag (#) to add newlines and indentation
-        f.debug_struct("LogEntry")
-            .field("query_no", &self.query_no)
-            .field("filename", &self.filename)
-            .field("query", &self.query)
-            .field("bind_statements", &self.bind_statements)
-            .finish()
+        writeln!(f, "LogEntry {{")?;
+        writeln!(f, "    query_no: {:?}", self.query_no)?;
+        writeln!(f, "    filename: {:?}", self.filename)?;
+        writeln!(f, "    query: {:?}", self.query)?;
+        writeln!(f, "    bind_statements: [")?;
+
+        if let Ok(Value::Array(elements)) = serde_json::from_str::<Value>(&self.bind_statements) {
+            for (i, element) in elements.iter().enumerate() {
+                writeln!(f, "        {}: {}", i, element)?;
+            }
+        }
+
+        writeln!(f, "    ]")?;
+        write!(f, "}}")
     }
 }
 
@@ -78,7 +85,7 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
     let re_query_no = Regex::new(r"^\[Q(\d+)]").unwrap();
     let re_filename = Regex::new(r"^([\w\.]+):").unwrap();
     let re_query = Regex::new(r"execute_all .*? ([A-Z]+.*)$").unwrap();
-    let re_bind = Regex::new(r"bind \d+ : (.*?)\s*").unwrap();
+    let re_bind = Regex::new(r"bind \d+ : .+? \(.*\)(.*)$").unwrap();
 
     let mut current_query_no = "".to_string();
     let mut current_filename = "".to_string();
