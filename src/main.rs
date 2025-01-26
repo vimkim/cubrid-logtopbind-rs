@@ -1,7 +1,8 @@
+use anyhow::Result;
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
 use regex::Regex;
-use rusqlite::{params, Connection, Result};
-use serde_json::json;
-use serde_json::Value;
+use rusqlite::{params, Connection};
 use std::env;
 use std::fmt;
 use std::fs;
@@ -22,7 +23,7 @@ fn main() -> Result<()> {
     let db_path = "queries.db";
 
     // Initialize SQLite connection and table
-    let conn = Connection::open(db_path)?;
+    let mut conn = Connection::open(db_path)?;
     initialize_db(&conn)?;
 
     // Read log file
@@ -30,12 +31,10 @@ fn main() -> Result<()> {
 
     // Parse log entries and insert them into the database
     let entries = parse_log_entries(&content);
-    for entry in entries {
-        println!("Inserting log entry: {:#?}", entry);
-        insert_entry(&conn, &entry)?;
-    }
 
-    println!("Log entries have been saved to the database.");
+    // Process entries with progress tracking
+    insert_entry(&mut conn, &entries)?;
+
     Ok(())
 }
 
@@ -44,7 +43,7 @@ struct LogEntry {
     query_no: String,
     filename: String,
     query: String,
-    bind_statements: String, // JSON array as a string
+    bind_statements: Vec<String>,
 }
 
 impl fmt::Debug for LogEntry {
@@ -55,11 +54,8 @@ impl fmt::Debug for LogEntry {
         writeln!(f, "    query: {:?}", self.query)?;
         writeln!(f, "    bind_statements: [")?;
 
-        if let Ok(Value::Array(elements)) = serde_json::from_str::<Value>(&self.bind_statements) {
-            for (i, element) in elements.iter().enumerate() {
-                writeln!(f, "        {}: {}", i, element)?;
-            }
-        }
+        // print bine statement line by line
+        writeln!(f, "        {}", self.bind_statements.join(",\n        "))?;
 
         writeln!(f, "    ]")?;
         write!(f, "}}")
@@ -73,7 +69,7 @@ fn initialize_db(conn: &Connection) -> Result<()> {
             query_no TEXT NOT NULL,
             filename TEXT NOT NULL,
             query TEXT NOT NULL,
-            bind_statements TEXT NOT NULL
+            bind_statements JSON NOT NULL
         )",
         [],
     )?;
@@ -100,7 +96,7 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
                     query_no: current_query_no.clone(),
                     filename: current_filename.clone(),
                     query: current_query.clone(),
-                    bind_statements: json!(bind_statements).to_string(),
+                    bind_statements: bind_statements.clone(),
                 });
 
                 // Reset for the next entry
@@ -129,28 +125,47 @@ fn parse_log_entries(content: &str) -> Vec<LogEntry> {
             query_no: current_query_no,
             filename: current_filename,
             query: current_query,
-            bind_statements: json!(bind_statements).to_string(),
+            bind_statements,
         });
     }
 
     entries
 }
 
-fn insert_entry(conn: &Connection, entry: &LogEntry) -> Result<()> {
-    // Convert the Vec<String> to a JSON string
-    let bind_statements_json = serde_json::to_string(&entry.bind_statements)
-        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+fn insert_entry(conn: &mut Connection, entries: &[LogEntry]) -> Result<()> {
+    let total_entries = entries.len();
+    let progress_bar = ProgressBar::new(total_entries as u64);
+    progress_bar.set_style(
+        ProgressStyle::default_bar()
+            .template("{spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} ({percent}%) - ETA: {eta}")
+            .unwrap()
+            .progress_chars("#>-"),
+    );
 
-    conn.execute(
-        "INSERT INTO log_entries (query_no, filename, query, bind_statements) 
-         VALUES (?1, ?2, ?3, ?4)",
-        params![
-            &entry.query_no,
-            &entry.filename,
-            &entry.query,
-            &bind_statements_json
-        ],
-    )?;
+    {
+        let tx = conn.transaction()?;
+        {
+            let mut stmt = tx.prepare_cached(
+                "INSERT INTO log_entries (query_no, filename, query, bind_statements) 
+                VALUES (?1, ?2, ?3, ?4)",
+            )?;
+
+            for entry in entries {
+                let bind_statements_json = serde_json::to_string(&entry.bind_statements)
+                    .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+                stmt.execute(params![
+                    &entry.query_no,
+                    &entry.filename,
+                    &entry.query,
+                    &bind_statements_json,
+                ])?;
+                progress_bar.inc(1);
+            }
+        } // stmt dropped here
+        tx.commit()?;
+    }
+
+    progress_bar.finish_with_message("All log entries processed successfully!");
     Ok(())
 }
 
