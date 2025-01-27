@@ -1,3 +1,4 @@
+pub mod query_format;
 pub fn print_help() {
     println!("Usage: program_name <log_file>");
     println!("\nArguments:");

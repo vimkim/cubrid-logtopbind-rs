@@ -1,6 +1,7 @@
 // In src/db/mod.rs
 
 use crate::parser::LogEntry;
+use crate::utils::query_format::adhoc_fix_query;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rusqlite::{params, Connection};
@@ -52,6 +53,8 @@ impl Database {
                         }
                     };
 
+                let fixed_query = adhoc_fix_query(&replaced_query);
+
                 let options = FormatOptions {
                     indent: Indent::Spaces(4), // Use Indent enum instead of string
                     uppercase: Some(true),     // Option<bool> instead of bool
@@ -60,8 +63,7 @@ impl Database {
                 };
 
                 // format sql to be human readable, using sqlformat
-                let formatted_query =
-                    sqlformat::format(&replaced_query, &QueryParams::None, &options);
+                let formatted_query = sqlformat::format(&fixed_query, &QueryParams::None, &options);
 
                 // Convert bind statements to JSON
                 let bind_statements_json = serde_json::to_string(&entry.bind_statements)
