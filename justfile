@@ -205,3 +205,6 @@ sqlite3:
 
 sqlite3-json:
     sqlite3 queries.db "select bind_statements -> '$[0]' from log_entries;"
+
+error-clip:
+    cargo check |& clip
