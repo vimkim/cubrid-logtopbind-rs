@@ -2,6 +2,9 @@
 
 A high-performance tool for analyzing CUBRID broker logs, converting them into human-readable format and storing them in SQLite for easy querying and analysis.
 
+![image](https://github.com/user-attachments/assets/0b7486b5-60c1-47f5-ac4e-638b8c0b7da2)
+
+
 ## Overview
 
 This tool helps CUBRID engineers and users inspect and analyze broker logs by:
