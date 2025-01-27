@@ -1,11 +1,14 @@
+use lazy_static::lazy_static;
 use regex::Regex;
 
-pub fn adhoc_fix_query(query: &str) -> String {
+lazy_static! {
     // Create regex pattern that matches SQL comments followed by either tabs or spaces
-    let pattern = Regex::new(r"--.*?(?:\t{2,}|\s{8,})").unwrap();
+    static ref SQL_COMMENT_PATTERN: Regex = Regex::new(r"--.*?(?:\t{2,}|\s{8,})").unwrap();
+}
 
+pub fn adhoc_fix_query(query: &str) -> String {
     // Replace matched patterns by adding a newline
-    pattern
+    SQL_COMMENT_PATTERN
         .replace_all(query, |caps: &regex::Captures| format!("{}\n", &caps[0]))
         .to_string()
 }
