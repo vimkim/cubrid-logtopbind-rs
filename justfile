@@ -193,3 +193,6 @@ watch-test-bacon:
 
 sqlite3:
     sqlite3 queries.db 'select * from log_entries;'
+
+sqlite3-json:
+    sqlite3 queries.db "select bind_statements -> '$[0]' from log_entries;"
