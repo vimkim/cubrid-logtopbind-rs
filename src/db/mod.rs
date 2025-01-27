@@ -34,7 +34,51 @@ impl Database {
 
     pub fn process_entries(&mut self, entries: &[LogEntry]) -> Result<()> {
         let progress_bar = self.create_progress_bar(entries.len());
+        let mut prepared_entries = Vec::with_capacity(entries.len());
 
+        let options = FormatOptions {
+            indent: Indent::Spaces(4), // Use Indent enum instead of string
+            uppercase: Some(true),     // Option<bool> instead of bool
+            lines_between_queries: 1,
+            ignore_case_convert: None,
+        };
+
+        println!("Processing log entries...");
+        for entry in entries {
+            // Try to replace query parameters
+            let replaced_query =
+                match LogEntry::replace_query_params(&entry.query, &entry.bind_statements) {
+                    Ok(replaced) => replaced,
+                    Err(e) => {
+                        eprintln!("Error processing query {}: {}", entry.query_no, e);
+                        String::new() // Empty string for failed replacements
+                    }
+                };
+
+            let fixed_query = adhoc_fix_query(&replaced_query);
+
+            // format sql to be human readable, using sqlformat
+            // let formatted_query = sqlformat::format(&fixed_query, &QueryParams::None, &options);
+            // takes too much time. Run this manually after the data is inserted
+            let formatted_query = fixed_query;
+
+            // Convert bind statements to JSON
+            let bind_statements_json = serde_json::to_string(&entry.bind_statements)
+                .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+            prepared_entries.push((
+                entry.query_no.clone(),
+                entry.filename.clone(),
+                entry.query.clone(),
+                formatted_query,
+                bind_statements_json,
+            ));
+            progress_bar.inc(1);
+        }
+        progress_bar.finish_with_message("All log entries processed successfully!");
+
+        println!("Inserting log entries into database...");
+        let progress_bar = self.create_progress_bar(entries.len());
         let tx = self.conn.transaction()?;
         {
             let mut stmt = tx.prepare_cached(
@@ -42,38 +86,14 @@ impl Database {
                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
 
-            let options = FormatOptions {
-                indent: Indent::Spaces(4), // Use Indent enum instead of string
-                uppercase: Some(true),     // Option<bool> instead of bool
-                lines_between_queries: 1,
-                ignore_case_convert: None,
-            };
-
-            for entry in entries {
-                // Try to replace query parameters
-                let replaced_query =
-                    match LogEntry::replace_query_params(&entry.query, &entry.bind_statements) {
-                        Ok(replaced) => replaced,
-                        Err(e) => {
-                            eprintln!("Error processing query {}: {}", entry.query_no, e);
-                            String::new() // Empty string for failed replacements
-                        }
-                    };
-
-                let fixed_query = adhoc_fix_query(&replaced_query);
-
-                // format sql to be human readable, using sqlformat
-                let formatted_query = sqlformat::format(&fixed_query, &QueryParams::None, &options);
-
-                // Convert bind statements to JSON
-                let bind_statements_json = serde_json::to_string(&entry.bind_statements)
-                    .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
-
+            for (query_no, filename, query, formatted_query, bind_statements_json) in
+                prepared_entries
+            {
                 // Insert into database
                 stmt.execute(params![
-                    &entry.query_no,
-                    &entry.filename,
-                    &entry.query,
+                    &query_no,
+                    &filename,
+                    &query,
                     &formatted_query,
                     &bind_statements_json,
                 ])?;
