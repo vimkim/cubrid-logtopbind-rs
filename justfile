@@ -208,3 +208,9 @@ sqlite3-json:
 
 error-clip:
     cargo check |& clip
+
+sqlite3-rs-select:
+    ./target/debug/sqlite-rs queries.db 'select * from log_entries;'
+
+sqlite3-rs-interactive:
+    ./target/debug/sqlite-rs queries.db

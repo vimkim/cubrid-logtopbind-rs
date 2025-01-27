@@ -3,6 +3,14 @@ name = "cubrid-logtopbind-rs"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "logtopbind"  # Your main binary name
+path = "src/main.rs"
+
+[[bin]]
+name = "sqlite-rs"         # New SQLite binary name
+path = "src/bin/sqlite.rs"
+
 [dependencies]
 anyhow = "1.0.95"
 indicatif = "0.17.9"
