@@ -117,3 +117,6 @@ system-info:
     @echo "architecture: {{ arch() }}"
     @echo "os: {{ os() }}"
     @echo "os family: {{ os_family() }}"
+
+release-upgrade:
+    cargo release patch --no-publish
