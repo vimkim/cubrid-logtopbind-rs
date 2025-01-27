@@ -1,4 +1,6 @@
 mod log_entry;
+use std::io::{self, Write};
+
 pub use log_entry::LogEntry;
 
 use indicatif::{ProgressBar, ProgressStyle};
@@ -41,8 +43,11 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
     let mut entries = Vec::new();
     let mut current = LogEntry::default();
 
-    for line in lines {
+    let mut after_bind = false;
+    for line in lines.into_iter() {
+        let mut after_bind_continue = false;
         pb.inc(1);
+        io::stdout().flush().unwrap();
 
         if let Some(caps) = re_query_no.captures(line) {
             if !current.query_no.is_empty() {
@@ -56,14 +61,22 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
             current.bind_statements.push(caps[1].to_string());
         } else if let Some(caps) = re_query.captures(line) {
             current.query = caps[1].to_string();
-        } else if re_end.captures(line).is_some() || line.is_empty() {
-            continue;
+        } else if re_end.captures(line).is_some() {
         } else if let Some(caps) = re_filename.captures(line) {
             current.filename = caps[1].to_string();
+        } else if after_bind {
+            after_bind_continue = true;
+            // append to the last element of the bind_statements
+            let last = current.bind_statements.len() - 1;
+            current.bind_statements[last] = format!("{}\n{}", current.bind_statements[last], line);
+        } else if line.is_empty() {
+            // ignore empty lines
+            // must be after 'after_bind' check, since bind vars can contain empty lines
         } else {
-            // print error
             println!("Unrecognized line: {}", line);
         }
+
+        after_bind = after_bind_continue || re_bind.captures(line).is_some();
     }
 
     if !current.query_no.is_empty() {
