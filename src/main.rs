@@ -3,7 +3,6 @@ use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 use regex::Regex;
 use rusqlite::{params, Connection};
-use serde_json::Value;
 use std::env;
 use std::fmt;
 use std::fs;
