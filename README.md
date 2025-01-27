@@ -84,6 +84,8 @@ Example usage:
 
 ### Interactive SQL Query Mode
 
+![image](https://github.com/user-attachments/assets/cdf585dc-788f-4cb9-b415-68b87f8bb76a)
+
 To analyze the converted logs using SQL:
 
 ```bash
