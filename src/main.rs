@@ -40,7 +40,7 @@ fn main() -> Result<()> {
         .collect();
 
     println!(
-        "Deleted entries due to bind var numbers mismatch:\n {:?}",
+        "Deleted entries due to bind var numbers mismatch:\n  {:?}",
         deleted_entry_numbers
     );
 

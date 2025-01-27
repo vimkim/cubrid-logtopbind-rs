@@ -34,9 +34,7 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
     let pb = ProgressBar::new(lines.len() as u64);
     pb.set_style(
         ProgressStyle::default_bar()
-            .template(
-                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
-            )?
+            .template("  [{bar:40.cyan/blue}] {pos}/{len} ({eta})")?
             .progress_chars("#>-"),
     );
 
