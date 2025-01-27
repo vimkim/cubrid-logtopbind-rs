@@ -118,5 +118,5 @@ system-info:
     @echo "os: {{ os() }}"
     @echo "os family: {{ os_family() }}"
 
-release-upgrade:
+release-patch:
     cargo release patch --no-publish
