@@ -79,6 +79,10 @@ run-logtopbind-500k: build-logtopbind
     /bin/rm -rf queries.db
     ./target/debug/logtopbind ./testdata/log_top_500k.q
 
+run-logtopbind-50m: build-logtopbind
+    /bin/rm -rf queries.db
+    ./target/debug/logtopbind ./testdata/log_top_50m.q
+
 run-logtopbind-release-500k:
     /bin/rm -rf queries.db
     cargo run --release --bin logtopbind ./testdata/log_top_500k.q

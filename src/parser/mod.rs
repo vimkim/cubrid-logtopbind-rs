@@ -9,7 +9,7 @@ pub fn parse_log_entries(content: &str) -> Vec<LogEntry> {
     let re_query = Regex::new(r"(?:execute_all|execute) srv_h_id (?:\d+)? (.*)$").unwrap();
     let re_bind = Regex::new(r"bind \d+ : .+? (?:\(.*\))?(.*)$").unwrap();
     let re_bind_null = Regex::new(r"bind \d+ : NULL$").unwrap();
-    let re_end = Regex::new(r"execute_all 0 tuple").unwrap();
+    let re_end = Regex::new(r"(?:execute_all|execute) .* tuple").unwrap();
 
     let mut entries = Vec::new();
     let mut current = LogEntry::default();
