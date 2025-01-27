@@ -1,3 +1,4 @@
+use anyhow::Error;
 use anyhow::Result;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
@@ -32,7 +33,7 @@ fn main() -> Result<()> {
     // Parse log entries and insert them into the database
     let entries = parse_log_entries(&content);
 
-    validate_entries(&entries)?;
+    debug_assert!(validate_entries(&entries).is_ok(), "Validation failed");
 
     // Process entries with progress tracking
     insert_entry(&mut conn, &entries)?;

@@ -150,6 +150,11 @@ run:
     /bin/rm -rf queries.db
     cargo run ./testdata/log_top.q
 
+# build and run
+run-release:
+    /bin/rm -rf queries.db
+    cargo run --release ./testdata/log_top.q
+
 run-500k:
     /bin/rm -rf queries.db
     cargo run ./testdata/log_top_500k.q
