@@ -3,6 +3,7 @@ use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 use regex::Regex;
 use rusqlite::{params, Connection};
+use serde_json::Value;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -37,7 +38,84 @@ fn main() -> Result<()> {
     // Process entries with progress tracking
     insert_entry(&mut conn, &entries)?;
 
+    rebind_queries(&mut conn, &entries)?;
+
     Ok(())
+}
+
+fn rebind_queries(conn: &mut Connection, entries: &[LogEntry]) -> Result<()> {
+    // Connect to the database
+    let conn = Connection::open("queries.db")?;
+
+    // Query all entries
+    let mut stmt =
+        conn.prepare("SELECT query_no, filename, query, bind_statements FROM log_entries")?;
+
+    let entries = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?, // query_no
+            row.get::<_, String>(1)?, // filename
+            row.get::<_, String>(2)?, // query
+            row.get::<_, String>(3)?, // bind_statements
+        ))
+    })?;
+
+    // Process each entry
+    for entry in entries {
+        let (query_no, filename, query, bind_statements) = entry?;
+
+        match replace_query_params(&query, &bind_statements) {
+            Ok(replaced_query) => {
+                println!("Query No: {}", query_no);
+                println!("Filename: {}", filename);
+                println!("Original Query: {}", query);
+                println!("Replaced Query: {}", replaced_query);
+                println!("---");
+            }
+            Err(e) => {
+                eprintln!("Error processing query {}: {}", query_no, e);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn replace_query_params(
+    query: &str,
+    bind_statements: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    // Parse the JSON bind statements to get array of strings
+    let bind_values: Value = serde_json::from_str(bind_statements)?;
+    let bind_array = bind_values
+        .as_array()
+        .ok_or("bind_statements must be a JSON array")?;
+
+    // Count the number of ? in the query
+    let question_mark_count = query.chars().filter(|&c| c == '?').count();
+
+    // Validate that we have the correct number of bind parameters
+    if question_mark_count != bind_array.len() {
+        return Err(format!(
+            "Number of ? ({}) does not match number of bind parameters ({})",
+            question_mark_count,
+            bind_array.len()
+        )
+        .into());
+    }
+
+    // Replace each ? with corresponding string from bind_array
+    let mut result = query.to_string();
+    for value in bind_array {
+        let str_value = value.as_str().ok_or("Bind parameter must be a string")?;
+
+        // Replace first occurrence of ?
+        if let Some(pos) = result.find('?') {
+            result.replace_range(pos..pos + 1, str_value);
+        }
+    }
+
+    Ok(result)
 }
 
 fn validate_entries(entries: &[LogEntry]) -> Result<()> {
