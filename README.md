@@ -50,6 +50,10 @@ Convert a broker log file to SQLite database:
 
 This will create a `queries.db` file in your current directory.
 
+![image](https://github.com/user-attachments/assets/44e3db0f-6c79-4c17-9cd3-5e6e7108e2a0)
+
+> It only takes a few seconds to create queries.db, even for 50M log_top.q file input.
+
 ### Query Inspection Utility
 
 The `logtopprint` utility allows you to quickly inspect specific queries by their query number:
