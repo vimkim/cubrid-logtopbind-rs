@@ -42,6 +42,13 @@ impl Database {
                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
 
+            let options = FormatOptions {
+                indent: Indent::Spaces(4), // Use Indent enum instead of string
+                uppercase: Some(true),     // Option<bool> instead of bool
+                lines_between_queries: 1,
+                ignore_case_convert: None,
+            };
+
             for entry in entries {
                 // Try to replace query parameters
                 let replaced_query =
@@ -54,13 +61,6 @@ impl Database {
                     };
 
                 let fixed_query = adhoc_fix_query(&replaced_query);
-
-                let options = FormatOptions {
-                    indent: Indent::Spaces(4), // Use Indent enum instead of string
-                    uppercase: Some(true),     // Option<bool> instead of bool
-                    lines_between_queries: 1,
-                    ignore_case_convert: None,
-                };
 
                 // format sql to be human readable, using sqlformat
                 let formatted_query = sqlformat::format(&fixed_query, &QueryParams::None, &options);
