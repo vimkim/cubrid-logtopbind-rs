@@ -44,25 +44,19 @@ fn main() -> Result<()> {
 }
 
 fn rebind_queries(conn: &mut Connection, entries: &[LogEntry]) -> Result<()> {
-    // Connect to the database
-    let conn = Connection::open("queries.db")?;
-
     // Query all entries
     let mut stmt =
         conn.prepare("SELECT query_no, filename, query, bind_statements FROM log_entries")?;
 
-    let entries = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>(0)?, // query_no
-            row.get::<_, String>(1)?, // filename
-            row.get::<_, String>(2)?, // query
-            row.get::<_, String>(3)?, // bind_statements
-        ))
-    })?;
-
     // Process each entry
     for entry in entries {
-        let (query_no, filename, query, bind_statements) = entry?;
+        // Use this:
+        let LogEntry {
+            query_no,
+            filename,
+            query,
+            bind_statements,
+        } = entry;
 
         match replace_query_params(&query, &bind_statements) {
             Ok(replaced_query) => {
@@ -81,40 +75,27 @@ fn rebind_queries(conn: &mut Connection, entries: &[LogEntry]) -> Result<()> {
     Ok(())
 }
 
-fn replace_query_params(
-    query: &str,
-    bind_statements: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
-    // Parse the JSON bind statements to get array of strings
-    let bind_values: Value = serde_json::from_str(bind_statements)?;
-    let bind_array = bind_values
-        .as_array()
-        .ok_or("bind_statements must be a JSON array")?;
-
+fn replace_query_params(query: &str, bind_statements: &Vec<String>) -> Result<String> {
     // Count the number of ? in the query
     let question_mark_count = query.chars().filter(|&c| c == '?').count();
 
     // Validate that we have the correct number of bind parameters
-    if question_mark_count != bind_array.len() {
-        return Err(format!(
-            "Number of ? ({}) does not match number of bind parameters ({})",
+    if question_mark_count != bind_statements.len() {
+        return Err(anyhow::anyhow!(
+            "Number of ? in query ({}) does not match number of bind parameters ({})",
             question_mark_count,
-            bind_array.len()
-        )
-        .into());
+            bind_statements.len()
+        ));
     }
 
-    // Replace each ? with corresponding string from bind_array
+    // Replace each ? with corresponding string from bind_statements
     let mut result = query.to_string();
-    for value in bind_array {
-        let str_value = value.as_str().ok_or("Bind parameter must be a string")?;
-
+    for value in bind_statements {
         // Replace first occurrence of ?
         if let Some(pos) = result.find('?') {
-            result.replace_range(pos..pos + 1, str_value);
+            result.replace_range(pos..pos + 1, value);
         }
     }
-
     Ok(result)
 }
 
