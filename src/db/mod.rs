@@ -18,13 +18,13 @@ impl Database {
 
     pub fn initialize(&self) -> Result<()> {
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS log_entries (
+            "CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 query_no TEXT NOT NULL,
                 filename TEXT NOT NULL,
                 original_query TEXT NOT NULL,
-                replaced_query TEXT,
-                bind_statements JSON NOT NULL
+                binded_query TEXT,
+                bind_vars JSON NOT NULL
             )",
             [],
         )?;
@@ -37,7 +37,7 @@ impl Database {
         let tx = self.conn.transaction()?;
         {
             let mut stmt = tx.prepare_cached(
-                "INSERT INTO log_entries (query_no, filename, original_query, replaced_query, bind_statements) 
+                "INSERT INTO logs (query_no, filename, original_query, binded_query, bind_vars) 
                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
 
