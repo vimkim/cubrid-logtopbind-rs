@@ -25,8 +25,7 @@ fn main() -> Result<()> {
 
     let mut db = Database::new("queries.db")?;
     db.initialize()?;
-    db.insert_entries(&entries)?;
-    db.rebind_queries(&entries)?;
+    db.process_entries(&entries)?;
 
     Ok(())
 }
