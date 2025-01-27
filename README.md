@@ -50,6 +50,31 @@ Convert a broker log file to SQLite database:
 
 This will create a `queries.db` file in your current directory.
 
+### Query Inspection Utility
+
+The `logtopprint` utility allows you to quickly inspect specific queries by their query number:
+
+```bash
+cargo build --bin logtopprint
+./target/debug/logtopprint --query-no <QUERY_NO>
+```
+
+Available options:
+
+```
+Options:
+  -q, --query-no <QUERY_NO>  Query number to look up
+  -d, --database <DATABASE>  Path to the SQLite database file [default: queries.db]
+  -h, --help                 Print help
+  -V, --version              Print version
+```
+
+Example usage:
+
+```bash
+./target/debug/logtopprint --query-no 3
+```
+
 ### Interactive SQL Query Mode
 
 To analyze the converted logs using SQL:
@@ -102,22 +127,16 @@ The project uses Just as a command runner. Here are some useful commands:
 ```bash
 # Build the project
 just build
-
 # Run tests
 just test
-
 # Format code
 just format
-
 # Lint code
 just lint
-
 # Run with test data
 just run-logtopbind-simple
-
 # Run with larger dataset (500k entries)
 just run-logtopbind-500k
-
 ```
 
 ### Performance Testing
@@ -127,7 +146,6 @@ The tool includes performance test targets:
 ```bash
 # Test with small dataset
 just run-logtopbind-simple
-
 # Test with large dataset (500k entries)
 just run-logtopbind-500k
 ```
