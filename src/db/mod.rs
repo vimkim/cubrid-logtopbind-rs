@@ -1,11 +1,9 @@
-// In src/db/mod.rs
-
 use crate::parser::LogEntry;
 use crate::utils::query_format::adhoc_fix_query;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rusqlite::{params, Connection};
-use sqlformat::{FormatOptions, Indent, QueryParams};
+use sqlformat::{FormatOptions, Indent};
 
 pub struct Database {
     conn: Connection,
@@ -36,14 +34,13 @@ impl Database {
         let progress_bar = self.create_progress_bar(entries.len());
         let mut prepared_entries = Vec::with_capacity(entries.len());
 
-        let options = FormatOptions {
+        let _options = FormatOptions {
             indent: Indent::Spaces(4), // Use Indent enum instead of string
             uppercase: Some(true),     // Option<bool> instead of bool
             lines_between_queries: 1,
             ignore_case_convert: None,
         };
 
-        println!("Processing log entries...");
         for entry in entries {
             // Try to replace query parameters
             let replaced_query =
