@@ -43,6 +43,7 @@ jobs:
           mkdir dist
           cp target/x86_64-unknown-linux-gnu/release/logtopbind dist/logtopbind
           cp target/x86_64-unknown-linux-gnu/release/sqlite-rs dist/sqlite-rs
+          cp target/x86_64-unknown-linux-gnu/release/sqlite-rs dist/logtopprint
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         env:
@@ -51,3 +52,4 @@ jobs:
           files: |
             dist/logtopbind
             dist/sqlite-rs
+            dist/logtopprint
