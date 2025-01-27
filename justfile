@@ -65,26 +65,24 @@ pre-release: check test lint
 release: pre-release
     cargo build --release
 
+queries-db-remove:
+    /bin/rm -rf queries.db queries.db-journal
+
 # build and run
-run-logtopbind-simple: build-logtopbind
-    /bin/rm -rf queries.db
+run-logtopbind-simple: build-logtopbind queries-db-remove
     ./target/debug/logtopbind ./testdata/log_top.q
 
-# build and run
-run-logtopbind-release-simple:
-    /bin/rm -rf queries.db
-    cargo run --release --bin logtopbind ./testdata/log_top.q
-
-run-logtopbind-500k: build-logtopbind
-    /bin/rm -rf queries.db
+run-logtopbind-500k: build-logtopbind queries-db-remove
     ./target/debug/logtopbind ./testdata/log_top_500k.q
 
-run-logtopbind-50m: build-logtopbind
-    /bin/rm -rf queries.db
+run-logtopbind-50m: build-logtopbind queries-db-remove
     ./target/debug/logtopbind ./testdata/log_top_50m.q
 
-run-logtopbind-release-500k:
-    /bin/rm -rf queries.db
+# build and run
+run-logtopbind-release-simple: queries-db-remove
+    cargo run --release --bin logtopbind ./testdata/log_top.q
+
+run-logtopbind-release-500k: queries-db-remove
     cargo run --release --bin logtopbind ./testdata/log_top_500k.q
 
 test: lint
