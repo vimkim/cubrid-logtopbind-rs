@@ -55,12 +55,6 @@ lint:
     #
     cargo clippy --verbose --all-targets --all-features -- -D warnings
 
-# detect undefined behavior with miri (requires https://github.com/rust-lang/miri)
-miri:
-    cargo clean
-    cargo +nightly miri test
-    cargo +nightly miri run
-
 # detect outdated crates (requires https://github.com/kbknapp/cargo-outdated)
 outdated:
     cargo outdated
