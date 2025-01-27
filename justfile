@@ -52,6 +52,12 @@ timings:
 build: lint
     cargo build && echo "Executable at target/debug/{{ binary }}"
 
+build-sqlite3-rs:
+    cargo build --bin sqlite-rs
+
+build-logtopbind:
+    cargo build --bin logtopbind
+
 # analyze the current package and report errors, but don't build object files (faster than 'build')
 check:
     cargo check
@@ -146,22 +152,22 @@ release: pre-release
     cargo build --release && echo "Executable at target/release/{{ binary }}"
 
 # build and run
-run-simple:
+run-logtopbind-simple: build-logtopbind
     /bin/rm -rf queries.db
-    cargo run ./testdata/log_top.q
+    ./target/debug/logtopbind ./testdata/log_top.q
 
 # build and run
-run-release-simple:
+run-logtopbind-release-simple:
     /bin/rm -rf queries.db
-    cargo run --release ./testdata/log_top.q
+    cargo run --release --bin logtopbind ./testdata/log_top.q
 
-run-500k:
+run-logtopbind-500k: build-logtopbind
     /bin/rm -rf queries.db
-    cargo run ./testdata/log_top_500k.q
+    ./target/debug/logtopbind ./testdata/log_top_500k.q
 
-run-release-500k:
+run-logtopbind-release-500k:
     /bin/rm -rf queries.db
-    cargo run --release ./testdata/log_top_500k.q
+    cargo run --release --bin logtopbind ./testdata/log_top_500k.q
 
 # print system information such as OS and architecture
 system-info:
