@@ -207,19 +207,19 @@ watch-test-bacon:
     bacon --no-wrap test
 
 sqlite3:
-    sqlite3 queries.db 'select * from log_entries;'
+    sqlite3 queries.db 'select * from logs;'
 
 sqlite3-json:
-    sqlite3 queries.db "select bind_statements -> '$[0]' from log_entries;"
+    sqlite3 queries.db "select bind_statements -> '$[0]' from logs;"
 
 error-clip:
     cargo check |& clip
 
 sqlite3-rs-select: build-sqlite3-rs
-    ./target/debug/sqlite-rs queries.db 'select * from log_entries;'
+    ./target/debug/sqlite-rs queries.db 'select * from logs;'
 
 sqlite3-rs-select-replaced-1: build-sqlite3-rs
-    ./target/debug/sqlite-rs queries.db 'select replaced_query from log_entries limit 1;'
+    ./target/debug/sqlite-rs queries.db 'select replaced_query from logs limit 1;'
 
 sqlite3-rs-interactive: build-sqlite3-rs
     ./target/debug/sqlite-rs queries.db

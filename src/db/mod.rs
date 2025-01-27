@@ -23,7 +23,7 @@ impl Database {
                 query_no TEXT NOT NULL,
                 filename TEXT NOT NULL,
                 original_query TEXT NOT NULL,
-                binded_query TEXT,
+                replaced_query TEXT,
                 bind_vars JSON NOT NULL
             )",
             [],
@@ -37,7 +37,7 @@ impl Database {
         let tx = self.conn.transaction()?;
         {
             let mut stmt = tx.prepare_cached(
-                "INSERT INTO logs (query_no, filename, original_query, binded_query, bind_vars) 
+                "INSERT INTO logs (query_no, filename, original_query, replaced_query, bind_vars) 
                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
 
