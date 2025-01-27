@@ -106,6 +106,12 @@ sqlite3-rs-select-replaced-1: build-sqlite3-rs
 sqlite3-rs-interactive: build-sqlite3-rs
     ./target/debug/sqlite-rs queries.db
 
+build-logtopprint:
+    cargo build --bin logtopprint
+
+query-print-3: build-logtopprint
+    ./target/debug/logtopprint --query-no 3
+
 # print system information such as OS and architecture
 system-info:
     @echo "architecture: {{ arch() }}"
