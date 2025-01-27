@@ -1,0 +1,45 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+  build-release:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      - name: Build
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu
+      - name: Prepare binaries
+        run: |
+          mkdir dist
+          cp target/x86_64-unknown-linux-gnu/release/logtopbind dist/logtopbind
+          cp target/x86_64-unknown-linux-gnu/release/sqlite-rs dist/sqlite-rs
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            dist/logtopbind
+            dist/sqlite-rs
