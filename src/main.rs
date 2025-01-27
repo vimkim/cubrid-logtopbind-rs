@@ -1,4 +1,3 @@
-use anyhow::Error;
 use anyhow::Result;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
