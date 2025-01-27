@@ -2,6 +2,8 @@
 name = "cubrid-logtopbind-rs"
 version = "0.1.0"
 edition = "2021"
+description = "A CLI Utility Tool for inspecting CUBRID Broker logtop.q"
+license = "BSD"
 
 [[bin]]
 name = "logtopbind"  # Your main binary name
