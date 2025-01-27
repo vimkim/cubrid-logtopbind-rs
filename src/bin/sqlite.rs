@@ -49,6 +49,68 @@ fn execute_query(conn: &Connection, query: &str) -> Result<()> {
     Ok(())
 }
 
+fn show_tables(conn: &Connection) -> Result<()> {
+    let query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+
+    println!("Tables in database:");
+    println!("------------------");
+    for table_name in rows {
+        println!("{}", table_name?);
+    }
+    println!();
+    Ok(())
+}
+
+fn show_schema(conn: &Connection, table_name: Option<&str>) -> Result<()> {
+    let query = match table_name {
+        Some(name) => format!(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='{}';",
+            name
+        ),
+        None => String::from("SELECT sql FROM sqlite_master WHERE type='table' ORDER BY name;"),
+    };
+
+    let mut stmt = conn.prepare(&query)?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+
+    println!("Schema for tables:");
+    println!("-----------------");
+    for schema in rows {
+        println!("{};", schema?);
+        println!();
+    }
+    Ok(())
+}
+
+fn process_dot_command(conn: &Connection, command: &str) -> Result<bool> {
+    match command.trim().to_lowercase().as_str() {
+        ".tables" => {
+            show_tables(conn)?;
+            Ok(true)
+        }
+        ".schema" => {
+            show_schema(conn, None)?;
+            Ok(true)
+        }
+        ".quit" | ".exit" => Ok(false),
+        cmd if cmd.starts_with(".schema ") => {
+            let table_name = cmd.split_whitespace().nth(1).unwrap();
+            show_schema(conn, Some(table_name))?;
+            Ok(true)
+        }
+        _ => {
+            println!("Unknown command: {}", command);
+            println!("Available commands:");
+            println!("  .tables             List tables");
+            println!("  .schema [table]     Show schema for all tables or specific table");
+            println!("  .quit or .exit      Exit the program");
+            Ok(true)
+        }
+    }
+}
+
 fn interactive_mode(conn: &Connection) -> Result<()> {
     let mut buffer = String::new();
 
@@ -59,23 +121,23 @@ fn interactive_mode(conn: &Connection) -> Result<()> {
         buffer.clear();
         io::stdin().read_line(&mut buffer)?;
 
-        let query = buffer.trim();
-
-        // Exit conditions
-        if query.eq_ignore_ascii_case("exit")
-            || query.eq_ignore_ascii_case("quit")
-            || query.eq_ignore_ascii_case(".quit")
-        {
-            break;
-        }
+        let input = buffer.trim();
 
         // Skip empty lines
-        if query.is_empty() {
+        if input.is_empty() {
             continue;
         }
 
-        // Execute the query and handle any errors
-        if let Err(e) = execute_query(conn, query) {
+        // Handle dot commands
+        if input.starts_with('.') {
+            if !process_dot_command(conn, input)? {
+                break;
+            }
+            continue;
+        }
+
+        // Handle SQL queries
+        if let Err(e) = execute_query(conn, input) {
             eprintln!("Error: {}", e);
         }
     }
@@ -100,7 +162,8 @@ fn main() -> Result<()> {
     if args.len() == 2 {
         // Interactive mode
         println!("SQLite Rust Shell version 0.1.0");
-        println!("Enter \".quit\" to exit.");
+        println!("Enter \".help\" for usage hints.");
+        println!("Connected to {}", database);
         interactive_mode(&conn)?;
     } else {
         // Direct query mode
