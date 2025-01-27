@@ -14,8 +14,8 @@ This tool helps CUBRID engineers and users inspect and analyze broker logs by:
 ## Prerequisites
 
 - Rust (latest stable version)
-- SQLite 3
-- Just command runner (optional, but recommended)
+- SQLite 3 (optional)
+- Just command runner (optional)
 
 ## Installation
 
