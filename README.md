@@ -1,4 +1,4 @@
-# CUBRID Log Analysis Tool
+# CUBRID Log Analysis Tool : logtopbind-rs
 
 A high-performance tool for analyzing CUBRID broker logs, converting them into human-readable format and storing them in SQLite for easy querying and analysis.
 
