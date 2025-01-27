@@ -23,14 +23,26 @@ fn main() -> Result<()> {
     // debug_assert!(LogEntry::validate_entries(&entries).is_ok());
     // LogEntry::validate_entries(&entries)?; // instead of validate, I just filter out
 
+    let mut deleted_entry_numbers = vec![];
+
     println!("Filtering out invalid entries...");
     let entries: Vec<LogEntry> = entries
         .into_iter()
         .filter(|entry| {
             let query_no_of_placeholders = entry.query.bytes().filter(|&b| b == b'?').count();
-            query_no_of_placeholders == entry.bind_statements.len()
+
+            let is_same = query_no_of_placeholders == entry.bind_statements.len();
+            if !is_same {
+                deleted_entry_numbers.push(entry.query_no.clone());
+            }
+            is_same
         })
         .collect();
+
+    println!(
+        "Deleted entries due to bind var numbers mismatch:\n {:?}",
+        deleted_entry_numbers
+    );
 
     let mut db = Database::new("queries.db")?;
     db.initialize()?;
