@@ -4,6 +4,7 @@ use crate::parser::LogEntry;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use rusqlite::{params, Connection};
+use sqlformat::{FormatOptions, Indent, QueryParams};
 
 pub struct Database {
     conn: Connection,
@@ -44,19 +45,23 @@ impl Database {
                 // Try to replace query parameters
                 let replaced_query =
                     match LogEntry::replace_query_params(&entry.query, &entry.bind_statements) {
-                        Ok(replaced) => {
-                            println!("Successfully processed query {}:", entry.query_no);
-                            println!("Filename: {}", entry.filename);
-                            println!("Original: {}", entry.query);
-                            println!("Replaced: {}", replaced);
-                            println!("---");
-                            replaced
-                        }
+                        Ok(replaced) => replaced,
                         Err(e) => {
                             eprintln!("Error processing query {}: {}", entry.query_no, e);
                             String::new() // Empty string for failed replacements
                         }
                     };
+
+                let options = FormatOptions {
+                    indent: Indent::Spaces(4), // Use Indent enum instead of string
+                    uppercase: Some(true),     // Option<bool> instead of bool
+                    lines_between_queries: 1,
+                    ignore_case_convert: None,
+                };
+
+                // format sql to be human readable, using sqlformat
+                let formatted_query =
+                    sqlformat::format(&replaced_query, &QueryParams::None, &options);
 
                 // Convert bind statements to JSON
                 let bind_statements_json = serde_json::to_string(&entry.bind_statements)
@@ -67,7 +72,7 @@ impl Database {
                     &entry.query_no,
                     &entry.filename,
                     &entry.query,
-                    &replaced_query,
+                    &formatted_query,
                     &bind_statements_json,
                 ])?;
 

@@ -218,5 +218,8 @@ error-clip:
 sqlite3-rs-select: build-sqlite3-rs
     ./target/debug/sqlite-rs queries.db 'select * from log_entries;'
 
+sqlite3-rs-select-replaced-1: build-sqlite3-rs
+    ./target/debug/sqlite-rs queries.db 'select replaced_query from log_entries limit 1;'
+
 sqlite3-rs-interactive: build-sqlite3-rs
     ./target/debug/sqlite-rs queries.db
