@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A CLI Utility Tool for inspecting CUBRID Broker logtop.q"
 license = "BSD"
+repository = "https://github.com/vimkim/cubrid-logtopbind-rs"
 
 [[bin]]
 name = "logtopbind"  # Your main binary name
