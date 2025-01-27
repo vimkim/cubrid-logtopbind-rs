@@ -4,15 +4,31 @@ pub use log_entry::LogEntry;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use anyhow::Result;
+use regex::Regex;
 
 pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
-    use regex::Regex;
-    let re_query_no = Regex::new(r"^\[Q(\d+)\]").unwrap();
-    let re_filename = Regex::new(r"^([\w\.]+):").unwrap();
-    let re_query = Regex::new(r"(?:execute_all|execute) srv_h_id (?:\d+)? (.*)$").unwrap();
-    let re_bind = Regex::new(r"bind \d+ : .+? (?:\(.*\))?(.*)$").unwrap();
-    let re_bind_null = Regex::new(r"bind \d+ : NULL$").unwrap();
-    let re_end = Regex::new(r"(?:execute_all|execute) .* tuple").unwrap();
+    let timestamp_pattern =
+        r"(?:\d{2})-(?:\d{2})-(?:\d{2})\s(?:\d{2}):(?:\d{2}):(?:\d{2})\.(?:\d{3})\s\((?:\d+)\)";
+
+    let re_query_no = Regex::new(r"^\[Q(\d+)\]-+$").unwrap();
+    let re_query = Regex::new(&format!(
+        r"^{} (?:execute_all|execute) srv_h_id \d* (.*)$",
+        timestamp_pattern
+    ))
+    .unwrap();
+    let re_bind = Regex::new(&format!(
+        r"^{} bind \d+ : .+? (?:\(.*\))?(.*)$",
+        timestamp_pattern
+    ))
+    .unwrap();
+    let re_bind_null = Regex::new(&format!(r"^{} bind \d+ : NULL$", timestamp_pattern)).unwrap();
+    let re_end = Regex::new(&format!(
+        r"^{} (?:execute_all|execute) (error:-)?\d+ tuple \d+ time .*$",
+        timestamp_pattern
+    ))
+    .unwrap();
+    let re_filename =
+        Regex::new(r"^([a-zA-Z0-9][a-zA-Z0-9_\.-]{0,150}[a-zA-Z0-9]):\d{1,6}$").unwrap();
 
     let lines: Vec<&str> = content.lines().collect();
     let pb = ProgressBar::new(lines.len() as u64);
@@ -36,16 +52,16 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
                 current = LogEntry::default();
             }
             current.query_no = caps[1].to_string();
-        } else if let Some(caps) = re_filename.captures(line) {
-            current.filename = caps[1].to_string();
-        } else if let Some(caps) = re_query.captures(line) {
-            current.query = caps[1].to_string();
-        } else if let Some(caps) = re_bind.captures(line) {
-            current.bind_statements.push(caps[1].to_string());
         } else if re_bind_null.captures(line).is_some() {
             current.bind_statements.push("NULL".to_owned());
+        } else if let Some(caps) = re_bind.captures(line) {
+            current.bind_statements.push(caps[1].to_string());
+        } else if let Some(caps) = re_query.captures(line) {
+            current.query = caps[1].to_string();
         } else if re_end.captures(line).is_some() || line.is_empty() {
             continue;
+        } else if let Some(caps) = re_filename.captures(line) {
+            current.filename = caps[1].to_string();
         } else {
             // print error
             println!("Unrecognized line: {}", line);
