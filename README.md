@@ -168,6 +168,3 @@ just run-logtopbind-500k
 - `serde_json`: JSON processing
 - `sqlformat`: SQL formatting
 
-## License
-
-[BSD]
