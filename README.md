@@ -14,12 +14,6 @@ This tool helps CUBRID engineers and users inspect and analyze broker logs by:
 - Formatting SQL queries for better readability
 - Providing an interactive SQL interface for log analysis
 
-## Prerequisites
-
-- Rust (latest stable version)
-- SQLite 3 (optional)
-- Just command runner (optional)
-
 ## Installation
 
 1. Clone the repository:
@@ -128,6 +122,12 @@ SELECT bind_vars -> '$[0]' FROM logs;
 ```
 
 ## Development
+
+### Prerequisites
+
+- Rust (latest stable version)
+- SQLite 3 (optional)
+- Just command runner (optional)
 
 ### Available Commands
 
