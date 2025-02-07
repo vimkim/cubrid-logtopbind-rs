@@ -121,3 +121,17 @@ system-info:
 
 release-patch:
     cargo release patch --no-publish
+
+compare:
+    just check-question-0-1-2
+    just check-question-debug
+
+check-question-0-1-2:
+    rm queries.db
+    ./logtopbind-0.1.2 ./testdata/log_top_50m.q
+    sqlite3 queries.db 'select id, query_no, replaced_query from logs;' | rg '\?' > 0.1.2.log
+
+check-question-debug:
+    rm queries.db
+    ./target/debug/logtopbind ./testdata/log_top_50m.q
+    sqlite3 queries.db 'select id, query_no, replaced_query from logs;' | rg '\?' > develop.log
