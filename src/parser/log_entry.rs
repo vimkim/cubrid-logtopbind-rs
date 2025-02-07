@@ -27,22 +27,31 @@ impl LogEntry {
     }
 
     pub fn replace_query_params(query: &str, bind_statements: &[String]) -> Result<String> {
-        let question_mark_count = query.chars().filter(|&c| c == '?').count();
+        // Split the query on '?' characters. For n placeholders, we expect n+1 parts.
+        let parts: Vec<&str> = query.split('?').collect();
 
-        if question_mark_count != bind_statements.len() {
+        // Validate that the number of '?' placeholders matches the number of bind parameters.
+        if parts.len() - 1 != bind_statements.len() {
             return Err(anyhow::anyhow!(
                 "Number of ? in query ({}) does not match number of bind parameters ({})",
-                question_mark_count,
+                parts.len() - 1,
                 bind_statements.len()
             ));
         }
 
-        let mut result = query.to_string();
-        for value in bind_statements {
-            if let Some(pos) = result.find('?') {
-                result.replace_range(pos..pos + 1, value);
-            }
+        // Pre-calculate capacity to avoid multiple allocations.
+        let additional_capacity: usize = bind_statements.iter().map(|s| s.len()).sum();
+        let mut result = String::with_capacity(query.len() + additional_capacity);
+
+        // Interleave each part with the corresponding bind parameter.
+        // Note: parts.len() == bind_statements.len() + 1
+        for (part, value) in parts.iter().zip(bind_statements.iter()) {
+            result.push_str(part);
+            result.push_str(value);
         }
+        // Append the final part after the last placeholder.
+        result.push_str(parts.last().unwrap());
+
         Ok(result)
     }
 }
