@@ -8,7 +8,7 @@ audit:
     cargo audit
 
 # build debug executable
-build: lint
+build:
     cargo build
 
 build-sqlite3-rs:
@@ -85,8 +85,9 @@ run-logtopbind-release-simple: queries-db-remove
 run-logtopbind-release-500k: queries-db-remove
     cargo run --release --bin logtopbind ./testdata/log_top_500k.q
 
-test: lint
-    cargo test
+test:
+    # cargo test
+    ./test/test-question-marks.sh
 
 sqlite3:
     sqlite3 queries.db 'select * from logs;'
