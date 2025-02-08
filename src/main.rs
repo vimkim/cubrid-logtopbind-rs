@@ -4,7 +4,12 @@ use cubrid_logtopbind_rs::{
     parser::{parse_log_entries, LogEntry},
     utils::print_help,
 };
-use std::{env, fs};
+use std::{
+    env,
+    fs::{self, File},
+    io::BufWriter,
+    io::Write,
+};
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -43,6 +48,15 @@ fn main() -> Result<()> {
         "Deleted entries due to bind var numbers mismatch:\n  {:?}",
         deleted_entry_numbers
     );
+
+    // Open the file in append mode (creates it if it doesn't exist).
+    let file = File::create("deleted_entries.log")?;
+    let mut writer = BufWriter::new(file);
+
+    for entry in deleted_entry_numbers {
+        writeln!(writer, "{}", entry)?;
+    }
+    writer.flush()?;
 
     let mut db = Database::new("queries.db")?;
     db.initialize()?;
