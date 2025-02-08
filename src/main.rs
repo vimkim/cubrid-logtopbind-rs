@@ -40,6 +40,9 @@ fn process_entries(entries: Vec<LogEntry>) -> std::io::Result<Vec<LogEntry>> {
     // Partition the entries into valid and invalid groups.
     let (filtered_entries, deleted_entries): (Vec<LogEntry>, Vec<LogEntry>) =
         entries.into_iter().partition(|entry| {
+            if entry.bind_statements.is_empty() {
+                return true;
+            }
             let placeholder_count = entry.query.bytes().filter(|&b| b == b'?').count();
             placeholder_count == entry.bind_statements.len()
         });

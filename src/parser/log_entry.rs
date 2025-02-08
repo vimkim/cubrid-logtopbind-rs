@@ -15,7 +15,7 @@ impl LogEntry {
         let parts: Vec<&str> = query.split('?').collect();
 
         // Validate that the number of '?' placeholders matches the number of bind parameters.
-        if parts.len() - 1 != bind_statements.len() {
+        if parts.len() - 1 != bind_statements.len() && !bind_statements.is_empty() {
             return Err(anyhow::anyhow!(
                 "Number of ? in query ({}) does not match number of bind parameters ({})",
                 parts.len() - 1,
