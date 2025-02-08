@@ -56,7 +56,7 @@ fn process_entries(entries: Vec<LogEntry>) -> std::io::Result<Vec<LogEntry>> {
             "placeholder_count: {}",
             entry.query.bytes().filter(|&b| b == b'?').count()
         );
-        println!("Original query: {}", entry.query);
+        println!("Original query: {:.30}", entry.query);
         println!("-------------------------------------");
     }
 
