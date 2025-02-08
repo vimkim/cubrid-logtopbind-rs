@@ -56,20 +56,29 @@ use anyhow::{bail, Result};
 /// Returns an error if the input format is unrecognized or if the VARCHAR format is malformed.
 pub fn parse_bind_value(line: &str) -> Result<String> {
     let trimmed = line.trim();
-
     if trimmed == "NULL" {
         Ok("NULL".to_string())
     } else if trimmed.starts_with("SHORT ") {
-        // Extract everything after "SHORT " and return as string.
         let value_str = trimmed
             .strip_prefix("SHORT ")
             .expect("Prefix should exist")
             .trim();
         Ok(value_str.to_string())
     } else if trimmed.starts_with("INT ") {
-        // Extract everything after "INT " and return as string.
         let value_str = trimmed
             .strip_prefix("INT ")
+            .expect("Prefix should exist")
+            .trim();
+        Ok(value_str.to_string())
+    } else if trimmed.starts_with("NUMERIC ") {
+        let value_str = trimmed
+            .strip_prefix("NUMERIC ")
+            .expect("Prefix should exist")
+            .trim();
+        Ok(value_str.to_string())
+    } else if trimmed.starts_with("BIGINT ") {
+        let value_str = trimmed
+            .strip_prefix("BIGINT ")
             .expect("Prefix should exist")
             .trim();
         Ok(value_str.to_string())
@@ -80,9 +89,11 @@ pub fn parse_bind_value(line: &str) -> Result<String> {
             let content = trimmed[close_paren_idx + 1..].trim();
             Ok(content.to_string())
         } else {
+            eprintln!("Error parsing line: {}", line);
             bail!("Malformed VARCHAR field: missing ')'");
         }
     } else {
+        eprintln!("Error parsing line: {}", line);
         bail!("Unrecognized field format");
     }
 }

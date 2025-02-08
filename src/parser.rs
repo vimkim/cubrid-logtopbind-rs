@@ -5,6 +5,7 @@ pub use log_entry::LogEntry;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use anyhow::Result;
+use parse_line::parse_bind_value;
 use parse_line::parse_line;
 use parse_line::ParsedLine;
 use regex::Regex;
@@ -65,7 +66,8 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
                 after_bind = false;
             }
             Some(ParsedLine::Bind(text)) => {
-                current.bind_statements.push(text.to_string());
+                let text = parse_bind_value(text)?;
+                current.bind_statements.push(text);
                 after_bind = true;
             }
             Some(ParsedLine::Query(text)) => {
