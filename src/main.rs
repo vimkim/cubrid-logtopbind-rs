@@ -56,7 +56,12 @@ fn process_entries(entries: Vec<LogEntry>) -> std::io::Result<Vec<LogEntry>> {
             "placeholder_count: {}",
             entry.query.bytes().filter(|&b| b == b'?').count()
         );
-        println!("Original query: {:.30}", entry.query);
+        let truncated = if entry.query.len() > 30 {
+            format!("{:.30} ...(skipped)", entry.query)
+        } else {
+            entry.query.to_string()
+        };
+        println!("Original query: {}", truncated);
         println!("-------------------------------------");
     }
 
