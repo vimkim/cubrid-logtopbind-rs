@@ -136,5 +136,5 @@ check-question-debug:
     ./target/debug/logtopbind ./testdata/log_top_50m.q
     sqlite3 queries.db 'select id, query_no, replaced_query from logs;' | rg '\?' > develop.log
 
-why:
+test-big:
     cargo test test_big_line -- --nocapture
