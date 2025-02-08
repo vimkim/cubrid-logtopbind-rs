@@ -2,3 +2,4 @@
 /testdata/log_top.q
 /testdata/log_top_50m.q
 queries.db
+testdata/big_bind.txt
