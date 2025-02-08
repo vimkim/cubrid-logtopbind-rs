@@ -51,6 +51,11 @@ fn process_entries(entries: Vec<LogEntry>) -> std::io::Result<Vec<LogEntry>> {
     println!("Deleted entries due to bind variable numbers mismatch:");
     for entry in &deleted_entries {
         println!("Entry number: {}", entry.query_no);
+        println!("bind statements: {}", entry.bind_statements.len(),);
+        println!(
+            "placeholder_count: {}",
+            entry.query.bytes().filter(|&b| b == b'?').count()
+        );
         println!("Original query: {}", entry.query);
         println!("-------------------------------------");
     }
