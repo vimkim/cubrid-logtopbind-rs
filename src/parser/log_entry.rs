@@ -10,22 +10,6 @@ pub struct LogEntry {
 }
 
 impl LogEntry {
-    pub fn validate_entries(entries: &[LogEntry]) -> Result<()> {
-        entries.iter().try_for_each(|entry| {
-            let query_no_of_placeholders = entry.query.matches('?').count();
-            if query_no_of_placeholders != entry.bind_statements.len() {
-                return Err(anyhow::anyhow!(
-                    "Number of placeholders in query {} and bind statements {} do not match for query_no: {}, {:#?}",
-                    query_no_of_placeholders,
-                    entry.bind_statements.len(),
-                    entry.query_no,
-                    entry
-                ));
-            }
-            Ok(())
-        })
-    }
-
     pub fn replace_query_params(query: &str, bind_statements: &[String]) -> Result<String> {
         // Split the query on '?' characters. For n placeholders, we expect n+1 parts.
         let parts: Vec<&str> = query.split('?').collect();
