@@ -32,8 +32,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install Rust and add the musl target. If your project or any dependency
-      # requires system musl tools, you might need to install them as well.
+      # Install musl-tools to provide musl-gcc
+      - name: Install musl-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      # Install Rust and add the musl target.
       - name: Install Rust (with musl target)
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -44,26 +49,13 @@ jobs:
         run: |
           cargo build --release --target x86_64-unknown-linux-musl
 
-      # Prepare binaries:
-      # Using the `install` command lets you explicitly set the permissions to 755.
-      # This avoids having to run a separate chmod step.
+      # Prepare binaries with the correct executable permissions.
       - name: Prepare binaries
         run: |
           mkdir -p dist
           install -m 755 target/x86_64-unknown-linux-musl/release/logtopbind dist/logtopbind
           install -m 755 target/x86_64-unknown-linux-musl/release/sqlite-rs dist/sqlite-rs
-          # Note: If you’re copying the same binary for a different name (logtopprint),
-          # you can also use install to copy it and set its mode.
           install -m 755 target/x86_64-unknown-linux-musl/release/sqlite-rs dist/logtopprint
-
-      # Optionally, if you want to package the binaries into a tarball so that file modes
-      # are preserved on extraction (especially useful when users download on systems
-      # that might not honor the executable bit on raw files), you could do:
-      #
-      # - name: Archive binaries
-      #   run: tar -czvf release-assets.tar.gz -C dist .
-      #
-      # and then update the upload step accordingly.
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
