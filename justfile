@@ -86,7 +86,7 @@ run-logtopbind-release-500k: queries-db-remove
     cargo run --release --bin logtopbind ./testdata/log_top_500k.q
 
 test:
-    # cargo test
+    cargo test
     ./test/test-question-marks.sh
 
 sqlite3:
@@ -135,3 +135,6 @@ check-question-debug:
     rm queries.db
     ./target/debug/logtopbind ./testdata/log_top_50m.q
     sqlite3 queries.db 'select id, query_no, replaced_query from logs;' | rg '\?' > develop.log
+
+why:
+    cargo test test_big_line -- --nocapture
