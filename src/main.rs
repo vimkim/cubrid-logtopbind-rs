@@ -25,38 +25,7 @@ fn main() -> Result<()> {
     println!("Parsing log entries...");
     let entries = parse_log_entries(&content)?;
 
-    // debug_assert!(LogEntry::validate_entries(&entries).is_ok());
-    // LogEntry::validate_entries(&entries)?; // instead of validate, I just filter out
-
-    let mut deleted_entry_numbers = vec![];
-
-    println!("Filtering out invalid entries...");
-    let entries: Vec<LogEntry> = entries
-        .into_iter()
-        .filter(|entry| {
-            let query_no_of_placeholders = entry.query.bytes().filter(|&b| b == b'?').count();
-
-            let is_same = query_no_of_placeholders == entry.bind_statements.len();
-            if !is_same {
-                deleted_entry_numbers.push(entry.query_no.clone());
-            }
-            is_same
-        })
-        .collect();
-
-    println!(
-        "Deleted entries due to bind var numbers mismatch:\n  {:?}",
-        deleted_entry_numbers
-    );
-
-    // Open the file in append mode (creates it if it doesn't exist).
-    let file = File::create("deleted_entries.log")?;
-    let mut writer = BufWriter::new(file);
-
-    for entry in deleted_entry_numbers {
-        writeln!(writer, "{}", entry)?;
-    }
-    writer.flush()?;
+    let entries = process_entries(entries)?;
 
     let mut db = Database::new("queries.db")?;
     db.initialize()?;
@@ -65,4 +34,34 @@ fn main() -> Result<()> {
     db.process_entries(&entries)?;
 
     Ok(())
+}
+
+fn process_entries(entries: Vec<LogEntry>) -> std::io::Result<Vec<LogEntry>> {
+    // Partition the entries into valid and invalid groups.
+    let (filtered_entries, deleted_entries): (Vec<LogEntry>, Vec<LogEntry>) =
+        entries.into_iter().partition(|entry| {
+            let placeholder_count = entry.query.bytes().filter(|&b| b == b'?').count();
+            placeholder_count == entry.bind_statements.len()
+        });
+
+    // Print a debug log to the console for the problematic entries.
+    println!("Deleted entries due to bind variable numbers mismatch:");
+    for entry in &deleted_entries {
+        println!("Entry number: {}", entry.query_no);
+        println!("Original query: {}", entry.query);
+        println!("-------------------------------------");
+    }
+
+    // Open the log file in append mode (creates it if it doesn't exist).
+    // This ensures that previous log entries are preserved.
+    let file = File::create("deleted_entries.log")?;
+    let mut writer = BufWriter::new(file);
+
+    // Write a detailed debug log to the file.
+    for entry in deleted_entries {
+        writeln!(writer, "{}", entry.query_no)?;
+    }
+    writer.flush()?;
+
+    Ok(filtered_entries)
 }
