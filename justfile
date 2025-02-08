@@ -119,7 +119,7 @@ system-info:
     @echo "os: {{ os() }}"
     @echo "os family: {{ os_family() }}"
 
-release-patch:
+release-patch: test
     cargo release patch --no-publish
 
 compare:
