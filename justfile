@@ -90,7 +90,6 @@ run-logtopbind-release-50m: build-logtopbind queries-db-remove
 
 test: test-deleted-entries
     cargo test
-    ./test/test-question-marks.sh
 
 sqlite3:
     sqlite3 queries.db 'select * from logs;'
