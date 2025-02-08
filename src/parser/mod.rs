@@ -18,7 +18,7 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
         timestamp_pattern
     ))
     .unwrap();
-    let re_bind = Regex::new(&format!(r"^{} bind \d+ : (.*)$", timestamp_pattern)).unwrap();
+    let re_bind = Regex::new(&format!(r"^{} bind \d+ : ", timestamp_pattern)).unwrap();
 
     let re_bind_null = Regex::new(&format!(r"^{} bind \d+ : NULL$", timestamp_pattern)).unwrap();
     let re_end = Regex::new(&format!(
@@ -55,10 +55,11 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
             current.query_no = caps[1].to_string();
         } else if re_bind_null.captures(line).is_some() {
             current.bind_statements.push("NULL".to_owned());
-        } else if let Some(caps) = re_bind.captures(line) {
-            let captured_text = caps[1].to_string();
-
-            current.bind_statements.push(captured_text);
+        } else if let Some(mat) = re_bind.find(line) {
+            // mat.end() gives the index right after the matched prefix.
+            // Everything after this position is the text you want.
+            let captured_text = &line[mat.end()..];
+            current.bind_statements.push(captured_text.to_string());
         } else if let Some(caps) = re_query.captures(line) {
             current.query = caps[1].to_string();
         } else if re_end.captures(line).is_some() {
