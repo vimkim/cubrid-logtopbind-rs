@@ -41,7 +41,7 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
     let mut current = LogEntry::default();
 
     let mut after_bind = false;
-    for (_i, line) in lines.into_iter().enumerate() {
+    for line in lines {
         // println!("{}", i);
         let mut after_bind_continue = false;
         pb.inc(1);
@@ -56,20 +56,7 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
         } else if re_bind_null.captures(line).is_some() {
             current.bind_statements.push("NULL".to_owned());
         } else if let Some(caps) = re_bind.captures(line) {
-            let mut captured_text = caps[1].to_string();
-
-            // Now, perform additional preprocessing.
-            // For example, remove a trailing parenthesized group if present:
-            if let Some(idx) = captured_text.rfind('(') {
-                // Check if there's a closing ')' after the '(' and it is at the end.
-                if captured_text.ends_with(')') {
-                    // Remove the parenthesized group:
-                    captured_text.truncate(idx);
-                }
-            }
-
-            // Additional processing: trim whitespace.
-            captured_text = captured_text.trim().to_string();
+            let captured_text = caps[1].to_string();
 
             current.bind_statements.push(captured_text);
         } else if let Some(caps) = re_query.captures(line) {
