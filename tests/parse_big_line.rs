@@ -102,6 +102,10 @@ fn test_big_line() -> Result<()> {
     let truncated = &first_bind[..first_bind.len().min(120)];
     println!("First bind statement (truncated): {}", truncated);
 
+    let binds_10 = first_entry.bind_statements[0..10].to_vec();
+
+    println!("{}", binds_10.join("\n"));
+
     Ok(())
 }
 
