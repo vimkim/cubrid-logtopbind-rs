@@ -1,6 +1,6 @@
 [package]
 name = "cubrid-logtopbind-rs"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 description = "A CLI Utility Tool for inspecting CUBRID Broker logtop.q"
 license = "BSD"
