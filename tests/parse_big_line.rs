@@ -85,12 +85,33 @@ fn test_partial_log_entry() -> Result<()> {
 }
 
 #[test]
+fn test_big_line() -> Result<()> {
+    let content = std::fs::read_to_string("./testdata/big_bind.txt")?;
+    let entries = parse_log_entries(&content)?;
+
+    let first_entry = entries
+        .first()
+        .ok_or_else(|| anyhow::anyhow!("No entries found"))?;
+
+    let first_bind = first_entry
+        .bind_statements
+        .get(39)
+        .ok_or_else(|| anyhow::anyhow!("No bind statements found"))?;
+
+    //println!("First bind statement: {:?}", first_bind);
+    let truncated = &first_bind[..first_bind.len().min(120)];
+    println!("First bind statement (truncated): {}", truncated);
+
+    Ok(())
+}
+
+#[test]
 fn test_invalid_lines() -> Result<()> {
     let invalid_log = r#"[Q1]--------------------
 21-02-24 15:30:45.123 (12345) execute srv_h_id 1 SELECT * FROM users
 Invalid line that should be ignored
 21-02-24 15:30:45.124 (12345) bind 1 : 42
-Another invalid line
+Valid line
 example.rs:123"#;
 
     let entries = parse_log_entries(invalid_log)?;
@@ -98,7 +119,7 @@ example.rs:123"#;
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].query_no, "1");
     assert_eq!(entries[0].query, "SELECT * FROM users");
-    assert_eq!(entries[0].bind_statements, vec!["42"]);
+    assert_eq!(entries[0].bind_statements, vec!["42\nValid line"]);
     assert_eq!(entries[0].filename, "example.rs");
 
     Ok(())
