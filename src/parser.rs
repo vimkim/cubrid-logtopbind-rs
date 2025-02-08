@@ -23,7 +23,6 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
     .unwrap();
     let re_bind = Regex::new(&format!(r"^{} bind \d+ : ", timestamp_pattern)).unwrap();
 
-    let re_bind_null = Regex::new(&format!(r"^{} bind \d+ : NULL$", timestamp_pattern)).unwrap();
     let re_end = Regex::new(&format!(
         r"^{} (?:execute_all|execute) (error:-)?\d+ tuple \d+ time .*$",
         timestamp_pattern
@@ -51,7 +50,6 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
         match parse_line(
             line,
             &re_query_no,
-            &re_bind_null,
             &re_bind,
             &re_query,
             &re_end,
@@ -64,10 +62,6 @@ pub fn parse_log_entries(content: &str) -> Result<Vec<LogEntry>> {
                 }
                 current.query_no = text.to_string();
                 // Reset the bind flag when starting a new query block.
-                after_bind = false;
-            }
-            Some(ParsedLine::BindNull) => {
-                current.bind_statements.push("NULL".to_owned());
                 after_bind = false;
             }
             Some(ParsedLine::Bind(text)) => {
