@@ -85,6 +85,9 @@ run-logtopbind-release-simple: queries-db-remove
 run-logtopbind-release-500k: queries-db-remove
     cargo run --release --bin logtopbind ./testdata/log_top_500k.q
 
+run-logtopbind-release-50m: build-logtopbind queries-db-remove
+    cargo run --release --bin logtopbind ./testdata/log_top_50m.q
+
 test: test-deleted-entries
     cargo test
     ./test/test-question-marks.sh
